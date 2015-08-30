@@ -21,8 +21,8 @@ public class ForSureDBMigrateTask extends DefaultTask {
         System.out.println("[dbmigrate]: output migrations to default class path with package: " + System.getProperty("applicationPackageName"));
 
         String assetDir = extension.getMigrationDirectory();
-        String generatedDir = "app/build/intermediates/classes/debug/" + System.getProperty("applicationPackageName").replace(".", File.separator);
-        for(File file : new File(generatedDir).listFiles()) {
+        String generatedDir = generatedDirectory(extension.getAppProjectDirectory());
+        for (File file : new File(generatedDir).listFiles()) {
             if (file.getName().endsWith("migration")) {
                 String outFile = assetDir + File.separator + file.getName() + ".xml";
                 System.out.println("[dbmigrate]: copying " + file.getAbsolutePath() + " to " + outFile);
@@ -89,5 +89,16 @@ public class ForSureDBMigrateTask extends DefaultTask {
         }
 
         return true;
+    }
+
+    private String generatedDirectory(String appProjectDirectory) {
+        appProjectDirectory = appProjectDirectory == null ? "" : appProjectDirectory;
+        return new StringBuffer(appProjectDirectory).append(appProjectDirectory.isEmpty() ? "" : File.separator)
+                .append("build").append(File.separator)
+                .append("intermediates").append(File.separator)
+                .append("classes").append(File.separator)
+                .append("debug").append(File.separator) // TODO: avoid forcing the user to compileDebugJava
+                .append(System.getProperty("applicationPackageName").replace(".", File.separator))
+                .toString();
     }
 }

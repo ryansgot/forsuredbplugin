@@ -6,6 +6,7 @@ public class ForSureExtension {
     private String resultParameter;
     private String dbType;
     private String migrationDirectory;
+    private String appProjectDirectory = "";
 
     public String getApplicationPackageName() {
         return applicationPackageName;
@@ -37,5 +38,13 @@ public class ForSureExtension {
 
     public void setMigrationDirectory(String migrationDirectory) {
         this.migrationDirectory = migrationDirectory;
+    }
+
+    public String getAppProjectDirectory() {
+        return appProjectDirectory;
+    }
+
+    public void setAppProjectDirectory(String appProjectDirectory) {
+        this.appProjectDirectory = appProjectDirectory;
     }
 }
