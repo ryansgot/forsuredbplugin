@@ -13,6 +13,8 @@ public class SetFSPropertiesTask extends DefaultTask {
             throw new IllegalStateException("Must set all forsuredb extension properties");
         }
 
+        System.out.println(extension.toString());
+
         System.setProperty("applicationPackageName", extension.getApplicationPackageName());
         System.setProperty("resultParameter", extension.getResultParameter());
         System.out.println("[setProperties]: set property applicationPackageName=" + System.getProperty("applicationPackageName"));

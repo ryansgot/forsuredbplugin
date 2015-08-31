@@ -8,6 +8,17 @@ public class ForSureExtension {
     private String migrationDirectory;
     private String appProjectDirectory = "";
 
+    @Override
+    public String toString() {
+        return new StringBuffer(ForSureExtension.class.getSimpleName()).append("{")
+                .append("applicationPackageName=").append(applicationPackageName)
+                .append(", resultParameter=").append(resultParameter)
+                .append(", dbType=").append(dbType)
+                .append(", migrationDirectory=").append(migrationDirectory)
+                .append(", appProjectDirectory=").append(appProjectDirectory)
+                .append("}").toString();
+    }
+
     public String getApplicationPackageName() {
         return applicationPackageName;
     }
