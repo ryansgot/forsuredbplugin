@@ -35,7 +35,7 @@ bintray {
     pkg {
         repo = 'maven'
         name = 'forsuredbplugin'
-        licenses = ['Apache-2.0']
+        licenses = ['GPL-2.0']
         vcsUrl = 'https://github.com/ryansgot/forsuredbplugin.git'
         publicDownloadNumbers = true
         version {
