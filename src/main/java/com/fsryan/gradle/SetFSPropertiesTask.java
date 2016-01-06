@@ -41,7 +41,6 @@ public class SetFSPropertiesTask extends DefaultTask {
         System.out.println("[setProperties]: set property resultParameter=" + System.getProperty("resultParameter"));
 
         if (wasRequestedTask("dbmigrate")) {
-            System.setProperty("dbtype", extension.getDbType());
             System.setProperty("createMigrations", "true");
             System.setProperty("migrationDirectory", extension.getMigrationDirectory());
             System.out.println("[setProperties]: set property dbtype=" + System.getProperty("dbtype"));

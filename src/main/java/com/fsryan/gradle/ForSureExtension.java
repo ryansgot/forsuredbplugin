@@ -24,7 +24,6 @@ public class ForSureExtension {
 
     private String applicationPackageName;
     private String resultParameter;
-    private String dbType;
     private String migrationDirectory;
     private String appProjectDirectory = "";
 
@@ -33,7 +32,6 @@ public class ForSureExtension {
         return new StringBuffer(ForSureExtension.class.getSimpleName()).append("{")
                 .append("applicationPackageName=").append(applicationPackageName)
                 .append(", resultParameter=").append(resultParameter)
-                .append(", dbType=").append(dbType)
                 .append(", migrationDirectory=").append(migrationDirectory)
                 .append(", appProjectDirectory=").append(appProjectDirectory)
                 .append("}").toString();
@@ -53,14 +51,6 @@ public class ForSureExtension {
 
     public void setResultParameter(String resultParameter) {
         this.resultParameter = resultParameter;
-    }
-
-    public String getDbType() {
-        return dbType;
-    }
-
-    public void setDbType(String dbType) {
-        this.dbType = dbType;
     }
 
     public String getMigrationDirectory() {

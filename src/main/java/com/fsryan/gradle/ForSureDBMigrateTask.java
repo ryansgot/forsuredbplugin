@@ -44,7 +44,7 @@ public class ForSureDBMigrateTask extends DefaultTask {
         String generatedDir = generatedDirectory(extension.getAppProjectDirectory());
         for (File file : new File(generatedDir).listFiles()) {
             if (file.getName().endsWith("migration")) {
-                String outFile = assetDir + File.separator + file.getName() + ".xml";
+                String outFile = assetDir + File.separator + file.getName() + ".json";
                 System.out.println("[dbmigrate]: copying " + file.getAbsolutePath() + " to " + outFile);
                 try {
                     copyFile(file.getAbsolutePath(), outFile);
