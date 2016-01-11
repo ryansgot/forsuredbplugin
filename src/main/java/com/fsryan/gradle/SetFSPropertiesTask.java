@@ -37,13 +37,14 @@ public class SetFSPropertiesTask extends DefaultTask {
 
         System.setProperty("applicationPackageName", extension.getApplicationPackageName());
         System.setProperty("resultParameter", extension.getResultParameter());
+        System.setProperty("recordContainer", extension.getRecordContainer());
         System.out.println("[setProperties]: set property applicationPackageName=" + System.getProperty("applicationPackageName"));
         System.out.println("[setProperties]: set property resultParameter=" + System.getProperty("resultParameter"));
+        System.out.println("[setProperties]: set property recordContainer=" + System.getProperty("recordContainer"));
 
         if (wasRequestedTask("dbmigrate")) {
             System.setProperty("createMigrations", "true");
             System.setProperty("migrationDirectory", extension.getMigrationDirectory());
-            System.out.println("[setProperties]: set property dbtype=" + System.getProperty("dbtype"));
             System.out.println("[setProperties]: set property createMigrations=" + System.getProperty("createMigrations"));
             System.out.println("[setProperties]: set property migrationDirectory=" + System.getProperty("migrationDirectory"));
         }

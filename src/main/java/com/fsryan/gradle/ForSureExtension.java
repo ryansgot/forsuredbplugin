@@ -24,6 +24,7 @@ public class ForSureExtension {
 
     private String applicationPackageName;
     private String resultParameter;
+    private String recordContainer;
     private String migrationDirectory;
     private String appProjectDirectory = "";
 
@@ -32,6 +33,7 @@ public class ForSureExtension {
         return new StringBuffer(ForSureExtension.class.getSimpleName()).append("{")
                 .append("applicationPackageName=").append(applicationPackageName)
                 .append(", resultParameter=").append(resultParameter)
+                .append(", recordContainer=").append(recordContainer)
                 .append(", migrationDirectory=").append(migrationDirectory)
                 .append(", appProjectDirectory=").append(appProjectDirectory)
                 .append("}").toString();
@@ -51,6 +53,14 @@ public class ForSureExtension {
 
     public void setResultParameter(String resultParameter) {
         this.resultParameter = resultParameter;
+    }
+
+    public String getRecordContainer() {
+        return recordContainer;
+    }
+
+    public void setRecordContainer(String recordContainer) {
+        this.recordContainer = recordContainer;
     }
 
     public String getMigrationDirectory() {
