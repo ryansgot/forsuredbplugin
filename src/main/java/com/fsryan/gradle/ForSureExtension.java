@@ -30,13 +30,13 @@ public class ForSureExtension {
 
     @Override
     public String toString() {
-        return new StringBuffer(ForSureExtension.class.getSimpleName()).append("{")
-                .append("applicationPackageName=").append(applicationPackageName)
-                .append(", resultParameter=").append(resultParameter)
-                .append(", recordContainer=").append(recordContainer)
-                .append(", migrationDirectory=").append(migrationDirectory)
-                .append(", appProjectDirectory=").append(appProjectDirectory)
-                .append("}").toString();
+        return ForSureExtension.class.getSimpleName() + "{"
+                + "applicationPackageName=" + applicationPackageName
+                + ", resultParameter=" + resultParameter
+                + ", recordContainer=" + recordContainer
+                + ", migrationDirectory=" + migrationDirectory
+                + ", appProjectDirectory=" + appProjectDirectory
+                + "}";
     }
 
     public String getApplicationPackageName() {

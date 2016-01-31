@@ -20,11 +20,12 @@
  */
 package com.fsryan.gradle;
 
-import org.gradle.TaskExecutionRequest;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
 
 public class SetFSPropertiesTask extends DefaultTask {
+
+    public static final String NAME = "setProperties";
 
     @TaskAction
     public void directAnnotaitonProcessor() {
@@ -33,32 +34,23 @@ public class SetFSPropertiesTask extends DefaultTask {
             throw new IllegalStateException("Must set all forsuredb extension properties");
         }
 
-        System.out.println(extension.toString());
-
-        System.setProperty("applicationPackageName", extension.getApplicationPackageName());
-        System.setProperty("resultParameter", extension.getResultParameter());
-        System.setProperty("recordContainer", extension.getRecordContainer());
-        System.out.println("[setProperties]: set property applicationPackageName=" + System.getProperty("applicationPackageName"));
-        System.out.println("[setProperties]: set property resultParameter=" + System.getProperty("resultParameter"));
-        System.out.println("[setProperties]: set property recordContainer=" + System.getProperty("recordContainer"));
-
-        if (wasRequestedTask("dbmigrate")) {
-            System.setProperty("createMigrations", "true");
-            System.setProperty("migrationDirectory", extension.getMigrationDirectory());
-            System.out.println("[setProperties]: set property createMigrations=" + System.getProperty("createMigrations"));
-            System.out.println("[setProperties]: set property migrationDirectory=" + System.getProperty("migrationDirectory"));
+        setSystemProperty("applicationPackageName", extension.getApplicationPackageName());
+        setSystemProperty("resultParameter", extension.getResultParameter());
+        setSystemProperty("recordContainer", extension.getRecordContainer());
+        if (ProjectUtil.wasRequestedTask(getProject(), ForSureDBMigrateTask.NAME)) {
+            setSystemProperty("createMigrations", "true");
+            setSystemProperty("migrationDirectory", extension.getMigrationDirectory());
+        } else {
+            TaskLog.d(NAME, "Not setting migration system properties");
         }
     }
 
-    private boolean wasRequestedTask(String taskName) {
-        for (TaskExecutionRequest taskExecutionRequest : getProject().getGradle().getStartParameter().getTaskRequests()) {
-            for (String arg : taskExecutionRequest.getArgs()) {
-                if (arg.equals(taskName)) {
-                    return true;
-                }
-            }
+    private void setSystemProperty(String key, String value) {
+        if (value == null || value.length() == 0) {
+            TaskLog.w(NAME, "Not setting system property" + key + " because it was " + (value == null ? "null" : "empty") + "; be prepared for compilation to fail");
+            return;
         }
-
-        return false;
+        System.setProperty(key, value);
+        TaskLog.i(NAME, "set system property " + key + "=" + value);
     }
 }
