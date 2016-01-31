@@ -38,9 +38,28 @@ public class ForSureDBPlugin implements Plugin<Project> {
             public void execute(Project project) {
                 Task dbMigrateTask = project.getTasks().getByName("dbmigrate");
                 dbMigrateTask.dependsOn("clean");
-                dbMigrateTask.dependsOn("compileDebugJava");
-                project.getTasks().getByName("compileDebugJava").dependsOn("setProperties");
+
+                boolean javaCompilationDependencyAdded = false;
+                for (Task task : project.getTasks()) {
+                    if (isJavaCompilationTask(task)) {
+                        if (!javaCompilationDependencyAdded) {
+                            javaCompilationDependencyAdded = true;
+                            System.out.println("[forsuredb]: setting task dbmigrate to depend upon " + task.getName());
+                            dbMigrateTask.dependsOn(task.getName());
+                        }
+                        System.out.println("[forsuredb]: setting task " + task.getName() + " to depend upon setProperties");
+                        task.dependsOn("setProperties");
+                    }
+                }
             }
         });
+    }
+
+    private boolean isJavaCompilationTask(Task task) {
+        final String tName = task.getName();
+        return (tName.contains("compile") || tName.contains("Compile"))
+                && (tName.contains("Java") || tName.contains("java"))
+                && !tName.contains("test")
+                && !tName.contains("Test");
     }
 }
