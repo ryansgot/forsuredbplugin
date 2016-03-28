@@ -141,6 +141,7 @@ public class ForSureDBMigrateTask extends DefaultTask {
     private File packageClassesDirGivenClassesPath(String classesBasePath, String packagePath) {
         File classesDir = new File(classesBasePath);
         if (!classesDir.exists() || !classesDir.isDirectory()) {
+            TaskLog.e(NAME, classesDir.getAbsolutePath() + " " + (classesDir.exists() ? "is not a directory" : "does not exist"));
             return null;
         }
 
@@ -149,12 +150,41 @@ public class ForSureDBMigrateTask extends DefaultTask {
                 continue;
             }
 
-            File retDir = new File (subfile.getAbsolutePath() + File.separator + packagePath);
-            if (retDir.exists() && retDir.isDirectory()) {
-                return retDir;
+            // Base case for recursion
+            if (containsSubdirectoryPath(subfile, packagePath)) {
+                return new File(subfile.getAbsolutePath() + File.separator + packagePath);
+            }
+
+            // Recursively check subdirectories of this directory
+            File subDir = packageClassesDirGivenClassesPath(subfile.getAbsolutePath(), packagePath);
+            if (subDir != null) {
+                return subDir;
             }
         }
 
+        TaskLog.e(NAME, "could not find compiled classes directory for : " + System.getProperty("applicationPackageName"));
         return null;
+    }
+
+    private boolean containsSubdirectoryPath(File dir, String subdirectoryPath) {
+        if (dir == null || !dir.exists() || !dir.isDirectory()) {
+            return false;
+        }
+
+        // cleanup for next loop or base case (subdirectoryPath == "")
+        int index = subdirectoryPath.indexOf('/');
+        String firstSubdirectory = index == -1 ? subdirectoryPath : subdirectoryPath.substring(0, index);
+        subdirectoryPath = index == -1 ? "" : subdirectoryPath.substring(index + 1);
+
+        for (File f : dir.listFiles()) {
+            if (!f.isDirectory() || !f.getName().equals(firstSubdirectory)) {
+                continue;
+            }
+            // if the subdirectoryPath is empty, then the final subdirectory has been matched
+            if (subdirectoryPath.isEmpty() || containsSubdirectoryPath(f, subdirectoryPath)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
