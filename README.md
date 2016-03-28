@@ -21,7 +21,7 @@ buildscript {
          * For Android: com.neenbedankt.gradle.plugins:android-apt:1.6 seems to work well.
          * For Java, I haven't yet tested an existing annotation processor plugin, so I can't make a suggestion.
          */
-        classpath 'com.fsryan:forsuredbplugin:0.2.0'
+        classpath 'com.fsryan:forsuredbplugin:0.2.1'
     }
 }
 ```
@@ -32,7 +32,7 @@ apply plugin: 'android-apt'
 /* ... */
 dependencies {
     /* ... */
-    apt 'com.fsryan:forsuredbcompiler:0.4.1'
+    apt 'com.fsryan:forsuredbcompiler:0.5.1'
     /* ... */
 }
 
