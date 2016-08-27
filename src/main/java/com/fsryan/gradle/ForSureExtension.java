@@ -20,62 +20,12 @@
  */
 package com.fsryan.gradle;
 
+@lombok.Data
 public class ForSureExtension {
-
+    private String fsJsonAdapterFactoryClass;
     private String applicationPackageName;
     private String resultParameter;
     private String recordContainer;
     private String migrationDirectory;
     private String appProjectDirectory = "";
-
-    @Override
-    public String toString() {
-        return ForSureExtension.class.getSimpleName() + "{"
-                + "applicationPackageName=" + applicationPackageName
-                + ", resultParameter=" + resultParameter
-                + ", recordContainer=" + recordContainer
-                + ", migrationDirectory=" + migrationDirectory
-                + ", appProjectDirectory=" + appProjectDirectory
-                + "}";
-    }
-
-    public String getApplicationPackageName() {
-        return applicationPackageName;
-    }
-
-    public void setApplicationPackageName(String applicationPackageName) {
-        this.applicationPackageName = applicationPackageName;
-    }
-
-    public String getResultParameter() {
-        return resultParameter;
-    }
-
-    public void setResultParameter(String resultParameter) {
-        this.resultParameter = resultParameter;
-    }
-
-    public String getRecordContainer() {
-        return recordContainer;
-    }
-
-    public void setRecordContainer(String recordContainer) {
-        this.recordContainer = recordContainer;
-    }
-
-    public String getMigrationDirectory() {
-        return migrationDirectory;
-    }
-
-    public void setMigrationDirectory(String migrationDirectory) {
-        this.migrationDirectory = migrationDirectory;
-    }
-
-    public String getAppProjectDirectory() {
-        return appProjectDirectory;
-    }
-
-    public void setAppProjectDirectory(String appProjectDirectory) {
-        this.appProjectDirectory = appProjectDirectory;
-    }
 }
