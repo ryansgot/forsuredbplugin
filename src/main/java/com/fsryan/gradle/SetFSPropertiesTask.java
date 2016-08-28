@@ -43,11 +43,6 @@ public class SetFSPropertiesTask extends DefaultTask {
         } else {
             TaskLog.d(NAME, "Not setting migration system properties");
         }
-        if (extension.getFsJsonAdapterFactoryClass() != null) {
-            setSystemProperty("fsJsonAdapterFactoryClass", extension.getFsJsonAdapterFactoryClass());
-        } else {
-            TaskLog.w(NAME, "No fsJsonAdapterFactoryClass set--project will use default adapter");
-        }
     }
 
     private void setSystemProperty(String key, String value) {

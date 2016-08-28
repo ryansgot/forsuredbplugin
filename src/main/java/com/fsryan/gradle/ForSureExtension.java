@@ -22,6 +22,7 @@ package com.fsryan.gradle;
 
 @lombok.Data
 public class ForSureExtension {
+    private String resourcesDirectory;
     private String fsJsonAdapterFactoryClass;
     private String applicationPackageName;
     private String resultParameter;
