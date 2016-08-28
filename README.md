@@ -62,5 +62,6 @@ Also, ensure that the java annotation processor will run forsuredbcompiler using
 ## Revisions
 ### 0.3.0
 - Support setting fsJsonAdapterFactoryClass system property.
+
 ### 0.2.1
 - Some bug fixes and first reliable version
