@@ -21,7 +21,7 @@ buildscript {
          * For Android: com.neenbedankt.gradle.plugins:android-apt:1.6 seems to work well.
          * For Java, I haven't yet tested an existing annotation processor plugin, so I can't make a suggestion.
          */
-        classpath 'com.fsryan:forsuredbplugin:0.2.1'
+        classpath 'com.fsryan:forsuredbplugin:0.3.0'
     }
 }
 ```
@@ -32,7 +32,7 @@ apply plugin: 'android-apt'
 /* ... */
 dependencies {
     /* ... */
-    apt 'com.fsryan:forsuredbcompiler:0.5.1'
+    apt 'com.fsryan:forsuredbcompiler:0.8.0'
     /* ... */
 }
 
@@ -42,6 +42,7 @@ forsuredb {
     recordContainer = "com.forsuredb.provider.FSContentValues"  // The class you would like to put record information into before saving
     migrationDirectory = 'app/src/main/assets'                  // The assests directory for your app relative to the working directory of your build
     appProjectDirectory = 'app'                                 // The base directory for your app relative to the working directory of your build
+    fsJsonAdapterFactoryClass = 'my.json.adapter.FactoryClass'  // (optional) A class implementing FSJsonAdapterFactory used to create your own custom Gson object for Doc Store serialization/deserialization
 }
 ```
 
@@ -52,7 +53,14 @@ For example:
 $ <your build script> -DapplicationPackageName=com.forsuredb.testapp \
     -DresultParameter=android.net.Uri \
     -DrecordContainer=com.forsuredb.provider.FSContentValues \
-    -DmigrationDirectory=app/src/main/assets
-    -DappProjectDirectory=app
+    -DmigrationDirectory=app/src/main/assets \
+    -DappProjectDirectory=app \
+    -DfsJsonAdapterFactoryClass=my.json.adapter.FactoryClass
 ```
 Also, ensure that the java annotation processor will run forsuredbcompiler using whatever build system you use.
+
+## Revisions
+### 0.3.0
+- Support setting fsJsonAdapterFactoryClass system property.
+### 0.2.1
+- Some bug fixes and first reliable version
