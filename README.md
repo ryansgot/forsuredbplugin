@@ -21,7 +21,7 @@ buildscript {
          * For Android: com.neenbedankt.gradle.plugins:android-apt:1.6 seems to work well.
          * For Java, I haven't yet tested an existing annotation processor plugin, so I can't make a suggestion.
          */
-        classpath 'com.fsryan:forsuredbplugin:0.3.0'
+        classpath 'com.fsryan:forsuredbplugin:0.3.1'
     }
 }
 ```
@@ -32,7 +32,8 @@ apply plugin: 'android-apt'
 /* ... */
 dependencies {
     /* ... */
-    apt 'com.fsryan:forsuredbcompiler:0.8.0'
+    compile 'com.fsryan.forsuredb:forsuredbapi:0.8.1'
+    apt 'com.fsryan.forsuredb:forsuredbcompiler:0.8.0'
     /* ... */
 }
 
@@ -42,24 +43,15 @@ forsuredb {
     recordContainer = "com.forsuredb.provider.FSContentValues"  // The class you would like to put record information into before saving
     migrationDirectory = 'app/src/main/assets'                  // The assests directory for your app relative to the working directory of your build
     appProjectDirectory = 'app'                                 // The base directory for your app relative to the working directory of your build
+    resourcesDirectory = 'app/src/main/resources'               // The directory that will contain META-INF/services so that your plugins can get picked up at runtime
     fsJsonAdapterFactoryClass = 'my.json.adapter.FactoryClass'  // (optional) A class implementing FSJsonAdapterFactory used to create your own custom Gson object for Doc Store serialization/deserialization
 }
 ```
 
-## What if I don't want to or can't use forsuredbplugin?
-Many projects may not use gradle as a build system. forsuredbplugin is not absolutely necessary in order to use the forsuredb project. If you either cannot or don't want ot use forsuredbplugin, then pass the system properties forsuredbcompiler requires on the command line when you build your project.
-For example:
-```
-$ <your build script> -DapplicationPackageName=com.forsuredb.testapp \
-    -DresultParameter=android.net.Uri \
-    -DrecordContainer=com.forsuredb.provider.FSContentValues \
-    -DmigrationDirectory=app/src/main/assets \
-    -DappProjectDirectory=app \
-    -DfsJsonAdapterFactoryClass=my.json.adapter.FactoryClass
-```
-Also, ensure that the java annotation processor will run forsuredbcompiler using whatever build system you use.
-
 ## Revisions
+### 0.3.1
+- Added task to properly configure the FSJsonAdapterFactory plugin whenever app is assembled
+- 
 ### 0.3.0
 - Support setting fsJsonAdapterFactoryClass system property.
 
