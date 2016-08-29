@@ -30,8 +30,9 @@ public class ForSureDBPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         project.getExtensions().create("forsuredb", ForSureExtension.class);
-        project.getTasks().create("setProperties", SetFSPropertiesTask.class);
-        project.getTasks().create("dbmigrate", ForSureDBMigrateTask.class);
+        project.getTasks().create(SetFSPropertiesTask.NAME, SetFSPropertiesTask.class);
+        project.getTasks().create(ForSureDBMigrateTask.NAME, ForSureDBMigrateTask.class);
+        project.getTasks().create(RegisterCustomFSJsonAdapterFactoryTask.NAME, RegisterCustomFSJsonAdapterFactoryTask.class);
 
         project.afterEvaluate(new Action<Project>() {
             @Override
@@ -45,6 +46,10 @@ public class ForSureDBPlugin implements Plugin<Project> {
                 // if a java compilation task was specifically requested, then make dbmigrate dependent upon that task
                 boolean javaCompilationDependencyAdded = dbmigrateDependencySetByRequestedTasks(project, dbMigrateTask);
                 for (Task task : project.getTasks()) {
+                    if (isAssembleTask(task.getName())) {
+                        TaskLog.d("setting task " + task.getName() + " to depend upon " + RegisterCustomFSJsonAdapterFactoryTask.NAME);
+                        task.dependsOn(RegisterCustomFSJsonAdapterFactoryTask.NAME);
+                    }
                     if (!isJavaCompilationTask(task.getName())) {
                         continue;   // <-- we don't care about any tasks that are not java compilation tasks
                     }
@@ -55,7 +60,7 @@ public class ForSureDBPlugin implements Plugin<Project> {
                         dbMigrateTask.dependsOn(task.getName());
                     }
                     TaskLog.d("setting task " + task.getName() + " to depend upon setProperties");
-                    task.dependsOn("setProperties");
+                    task.dependsOn(SetFSPropertiesTask.NAME);
                 }
 
                 // if the java compilation dependency has not yet been added, then this plugin is probably being misused
@@ -84,6 +89,10 @@ public class ForSureDBPlugin implements Plugin<Project> {
     private boolean isJavaCompilationTask(String taskName) {
         return (taskName.contains("compile") || taskName.contains("Compile"))
                 && (taskName.contains("Java") || taskName.contains("java"));
+    }
+
+    private boolean isAssembleTask(String name) {
+        return name != null && (name.contains("assemble") || name.contains("Assemble"));
     }
 
     private boolean isTestCompile(String taskName) {
