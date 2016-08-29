@@ -29,6 +29,7 @@ buildscript {
 Then add whatever you need to use the annotation processor, for example (if you're using the com.neenbedankt.gradle.plugins:android-apt:1.6 annotation processor):
 ```groovy
 apply plugin: 'android-apt'
+apply plugin: apply plugin: 'com.fsryan.forsuredb'
 /* ... */
 dependencies {
     /* ... */
