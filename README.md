@@ -52,7 +52,7 @@ forsuredb {
 ## Revisions
 ### 0.3.1
 - Added task to properly configure the FSJsonAdapterFactory plugin whenever app is assembled
-- 
+
 ### 0.3.0
 - Support setting fsJsonAdapterFactoryClass system property.
 
