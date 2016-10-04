@@ -8,9 +8,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public class RegisterCustomFSJsonAdapterFactoryTask extends DefaultTask {
+public class RegisterCustomFSSerializerFactoryTask extends DefaultTask {
 
-    public static final String NAME = "registerCustomFSJsonAdapterFactory";
+    public static final String NAME = "registerCustomFSSerializerFactory";
 
     @TaskAction
     public void writeToMetaInf() {
@@ -18,12 +18,12 @@ public class RegisterCustomFSJsonAdapterFactoryTask extends DefaultTask {
         if (extension == null) {
             throw new IllegalStateException("Must set all forsuredb extension properties");
         }
-        if (extension.getFsJsonAdapterFactoryClass() == null) {
-            TaskLog.w(NAME, "Cannot register custom fsJsonAdapterFactory without setting forsuredb.fsJsonAdapterFactoryClass property");
+        if (extension.getFsSerializerFactoryClass() == null) {
+            TaskLog.w(NAME, "Cannot register custom fsSerializerFactory without setting forsuredb.fsSerializerFactoryClass property");
             return;
         }
         if (extension.getResourcesDirectory() == null) {
-            TaskLog.w(NAME, "Cannot register custom fsJsonAdapterFactory without setting forsuredb.resourcesDirectory property");
+            TaskLog.w(NAME, "Cannot register custom fsSerializerFactory without setting forsuredb.resourcesDirectory property");
             return;
         }
 
@@ -31,17 +31,17 @@ public class RegisterCustomFSJsonAdapterFactoryTask extends DefaultTask {
         File metaInfDir = new File(metaInfDirStr);
         metaInfDir.mkdirs();
 
-        String spFileStr = metaInfDirStr + File.separator + "com.fsryan.forsuredb.api.adapter.FSJsonAdapterFactory";
+        String spFileStr = metaInfDirStr + File.separator + "com.fsryan.forsuredb.api.adapter.FSSerializerFactory";
         File spFile = new File(spFileStr);
         spFile.delete();
         BufferedWriter bw = null;
         try {
             spFile.createNewFile();
             bw = new BufferedWriter(new FileWriter(spFile));
-            bw.write(extension.getFsJsonAdapterFactoryClass());
+            bw.write(extension.getFsSerializerFactoryClass());
             TaskLog.d(NAME, "Wrote META-INF/services resource");
         } catch (IOException ioe) {
-            TaskLog.e(NAME, "Failed to write to service provider file: " + spFileStr + "; your custom FSJsonAdapterFactory will not be used");
+            TaskLog.e(NAME, "Failed to write to service provider file: " + spFileStr + "; your custom FSSerializerFactory will not be used");
         } finally {
             try {
                 bw.close();
