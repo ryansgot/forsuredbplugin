@@ -49,10 +49,10 @@ bintray {
         vcsUrl = 'https://github.com/ryansgot/forsuredbplugin.git'
         publicDownloadNumbers = true
         version {
-            name = '0.3.1'
+            name = '0.3.2'
             desc = 'ForSureDB gradle plugin'
             released  = new Date()
-            vcsTag = 'v0.3.1'
+            vcsTag = 'v0.3.2'
         }
     }
 }
@@ -68,21 +68,13 @@ sourceSets {
     }
 }
 
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            repository(url: bintrayUrl)
-//        }
-//    }
-//}
-
 publishing {
     publications {
         forsuredbPublication(MavenPublication) {
             from components.java
             groupId = 'com.fsryan'
             artifactId = 'forsuredbplugin'
-            version = '0.3.1'
+            version = '0.3.2'
         }
     }
 }
