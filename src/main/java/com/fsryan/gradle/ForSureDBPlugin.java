@@ -32,7 +32,7 @@ public class ForSureDBPlugin implements Plugin<Project> {
         project.getExtensions().create("forsuredb", ForSureExtension.class);
         project.getTasks().create(SetFSPropertiesTask.NAME, SetFSPropertiesTask.class);
         project.getTasks().create(ForSureDBMigrateTask.NAME, ForSureDBMigrateTask.class);
-        project.getTasks().create(RegisterCustomFSJsonAdapterFactoryTask.NAME, RegisterCustomFSJsonAdapterFactoryTask.class);
+        project.getTasks().create(RegisterCustomFSSerializerFactoryTask.NAME, RegisterCustomFSSerializerFactoryTask.class);
 
         project.afterEvaluate(new Action<Project>() {
             @Override
@@ -47,8 +47,8 @@ public class ForSureDBPlugin implements Plugin<Project> {
                 boolean javaCompilationDependencyAdded = dbmigrateDependencySetByRequestedTasks(project, dbMigrateTask);
                 for (Task task : project.getTasks()) {
                     if (isAssembleTask(task.getName())) {
-                        TaskLog.d("setting task " + task.getName() + " to depend upon " + RegisterCustomFSJsonAdapterFactoryTask.NAME);
-                        task.dependsOn(RegisterCustomFSJsonAdapterFactoryTask.NAME);
+                        TaskLog.d("setting task " + task.getName() + " to depend upon " + RegisterCustomFSSerializerFactoryTask.NAME);
+                        task.dependsOn(RegisterCustomFSSerializerFactoryTask.NAME);
                     }
                     if (!isJavaCompilationTask(task.getName())) {
                         continue;   // <-- we don't care about any tasks that are not java compilation tasks

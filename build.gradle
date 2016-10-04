@@ -17,7 +17,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 group = 'com.fsryan'
-version = '0.3.1'
+version = '0.3.2'
 
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
