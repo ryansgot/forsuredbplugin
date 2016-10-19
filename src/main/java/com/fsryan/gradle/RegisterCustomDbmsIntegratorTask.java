@@ -2,12 +2,12 @@ package com.fsryan.gradle;
 
 import org.gradle.api.tasks.TaskAction;
 
-public class RegisterCustomFSSerializerFactoryTask extends FSDBPluginRegistrar {
+public class RegisterCustomDbmsIntegratorTask extends FSDBPluginRegistrar {
 
-    public static final String NAME = "registerCustomFSSerializerFactory";
+    public static final String NAME = "registerCustomDbmsIntegratorClass";
 
-    public RegisterCustomFSSerializerFactoryTask() {
-        super("com.fsryan.forsuredb.api.adapter.FSSerializerFactory", "fsSerializerFactoryClass");
+    public RegisterCustomDbmsIntegratorTask() {
+        super("com.fsryan.forsuredb.api.sqlgeneration.DBMSIntegrator", "dbmsIntegratorClass");
     }
 
     @TaskAction
@@ -16,7 +16,7 @@ public class RegisterCustomFSSerializerFactoryTask extends FSDBPluginRegistrar {
         if (extension == null) {
             throw new IllegalStateException("Must set all forsuredb extension properties");
         }
-        writeMetaInfFile(extension.getResourcesDirectory(), extension.getFsSerializerFactoryClass());
+        writeMetaInfFile(extension.getResourcesDirectory(), extension.getDbmsIntegratorClass());
     }
 
     @Override
