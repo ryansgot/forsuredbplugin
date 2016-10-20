@@ -24,6 +24,7 @@ package com.fsryan.gradle;
 public class ForSureExtension {
     private String resourcesDirectory;
     private String fsSerializerFactoryClass;
+    private String dbmsIntegratorClass;
     private String applicationPackageName;
     private String resultParameter;
     private String recordContainer;
