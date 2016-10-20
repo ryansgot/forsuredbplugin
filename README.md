@@ -21,7 +21,7 @@ buildscript {
          * For Android: com.neenbedankt.gradle.plugins:android-apt:1.6 seems to work well.
          * For Java, I haven't yet tested an existing annotation processor plugin, so I can't make a suggestion.
          */
-        classpath 'com.fsryan:forsuredbplugin:0.3.1'
+        classpath 'com.fsryan:forsuredbplugin:0.4.0'
     }
 }
 ```
@@ -33,8 +33,9 @@ apply plugin: apply plugin: 'com.fsryan.forsuredb'
 /* ... */
 dependencies {
     /* ... */
-    compile 'com.fsryan.forsuredb:forsuredbapi:0.8.1'
-    apt 'com.fsryan.forsuredb:forsuredbcompiler:0.8.0'
+    compile 'com.fsryan.forsuredb:sqlitelib:0.4.0'              // Necessary only if you use the dbmsIntegratorClass value demonstrated in this example--but you don't absolutely need this specific one
+    compile 'com.fsryan.forsuredb:forsuredbapi:0.9.0'
+    apt 'com.fsryan.forsuredb:forsuredbcompiler:0.9.0'
     /* ... */
 }
 
@@ -45,11 +46,18 @@ forsuredb {
     migrationDirectory = 'app/src/main/assets'                  // The assests directory for your app relative to the working directory of your build
     appProjectDirectory = 'app'                                 // The base directory for your app relative to the working directory of your build
     resourcesDirectory = 'app/src/main/resources'               // The directory that will contain META-INF/services so that your plugins can get picked up at runtime
-    fsJsonAdapterFactoryClass = 'my.json.adapter.FactoryClass'  // (optional) A class implementing FSJsonAdapterFactory used to create your own custom Gson object for Doc Store serialization/deserialization
+    fsSerializerFactoryClass = 'my.json.adapter.FactoryClass'  // (optional) A class implementing FSSerializerFactory used to create your own custom serializer for object document storage
+    dbmsIntegratorClass = 'com.fsryan.forsuredb.sqlitelib.SqlGenerator' // NOT OPTIONAL as of fosuredbplugin 0.4.0
 }
 ```
 
 ## Revisions
+### 0.4.0
+- Added task to properly configure the DBMSIntegrator plugin whenever app is assembled
+
+### 0.3.2
+- Changed task that configured the FSJsonAdapterFactory plugin to configure the FSSerializerFactory plugin
+
 ### 0.3.1
 - Added task to properly configure the FSJsonAdapterFactory plugin whenever app is assembled
 
