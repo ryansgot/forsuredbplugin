@@ -16,6 +16,9 @@ public class RegisterCustomDbmsIntegratorTask extends FSDBPluginRegistrar {
         if (extension == null) {
             throw new IllegalStateException("Must set all forsuredb extension properties");
         }
+        if (extension.getDbmsIntegratorClass() == null) {
+            throw new IllegalStateException("Must set forsuredb.dbmsIntegratorClass property in order to build");
+        }
         writeMetaInfFile(extension.getResourcesDirectory(), extension.getDbmsIntegratorClass());
     }
 
