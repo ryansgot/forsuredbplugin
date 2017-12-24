@@ -3,6 +3,7 @@ package com.fsryan.gradle.forsuredb
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
@@ -12,13 +13,18 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 class ForSureDBPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
-
         with(project) {
-
             val setupTask = tasks.create("forsuredb", ForSureDBSetupTask::class.java)
             setupTask.outputs.upToDateWhen { false }
             val dbMigrateTask = tasks.create("dbMigrate", ForSureDBMigrateTask::class.java)
-            dbMigrateTask.dependsOn(setupTask)
+            val registerDbmsIntegratorTask = tasks.create(RegisterCustomDbmsIntegratorTask.NAME, RegisterCustomDbmsIntegratorTask::class.java)
+            val registerFSSerializerFactoryTask = tasks.create(RegisterCustomFSSerializerFactoryTask.NAME, RegisterCustomFSSerializerFactoryTask::class.java)
+
+            // ensure that forsuredb SPI plugins are in place on assemble
+            assembleTasks(project).filter { t -> !t.name.contains("Test") }.forEach { t ->
+                println("setting task ${t.name} to depend upon plugin registry tasks")
+                t.dependsOn(registerFSSerializerFactoryTask, registerDbmsIntegratorTask)
+            }
 
             tasks.withType(JavaCompile::class.java).forEach { compileTask ->
                 compileTask.dependsOn(setupTask)
@@ -29,6 +35,10 @@ class ForSureDBPlugin : Plugin<Project> {
                 }
             }
         }
+    }
+
+    fun assembleTasks(project: Project): List<Task> = project.tasks.filter { t ->
+        t.name.contains("assemble") || t.name.contains("Assemble")
     }
 
     fun getAndroidPlugin(project: Project): Plugin<Any> {
@@ -122,8 +132,6 @@ open class ForSureDBSetupTask : DefaultTask() {
 open class ForSureDBMigrateTask : DefaultTask() {
     @TaskAction
     fun execute(inputs: IncrementalTaskInputs) {
-        println("executing dbMigrate")
-
-        // TODO: move migrations from the output to the resources directory
+        MigrationFileCopier(project).copyMigrations()
     }
 }

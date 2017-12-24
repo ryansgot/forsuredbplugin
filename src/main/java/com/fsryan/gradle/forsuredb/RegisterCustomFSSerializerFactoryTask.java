@@ -1,4 +1,4 @@
-package com.fsryan.gradle.legacy;
+package com.fsryan.gradle.forsuredb;
 
 import org.gradle.api.tasks.TaskAction;
 
@@ -12,11 +12,12 @@ public class RegisterCustomFSSerializerFactoryTask extends FSDBPluginRegistrar {
 
     @TaskAction
     public void writeToMetaInf() {
-        ForSureExtension extension = getProject().getExtensions().findByType(ForSureExtension.class);
-        if (extension == null) {
-            throw new IllegalStateException("Must set all forsuredb extension properties");
+        String fsSerializerFactoryClass = getConfigProperty("fsSerializerFactoryClass");
+        if (fsSerializerFactoryClass == null || fsSerializerFactoryClass.isEmpty()) {
+            TaskLog.w(NAME, "no fsSerializerFactoryClass found; will fall back forsuredb's default Java serializable serializer");
+            return;
         }
-        writeMetaInfFile(extension.getResourcesDirectory(), extension.getFsSerializerFactoryClass());
+        writeMetaInfFile(fsSerializerFactoryClass);
     }
 
     @Override

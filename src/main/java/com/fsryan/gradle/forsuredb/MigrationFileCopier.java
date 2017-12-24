@@ -18,10 +18,9 @@
 
     Contact Ryan at ryansgot@gmail.com
  */
-package com.fsryan.gradle.legacy;
+package com.fsryan.gradle.forsuredb;
 
-import org.gradle.api.DefaultTask;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.Project;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,23 +28,24 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Stack;
 
-public class ForSureDBMigrateTask extends DefaultTask {
+public class MigrationFileCopier {
 
     public static final String NAME = "dbmigrate";
     private static final String javaClassesPath = "build" + File.separator + "classes";
     private static final String androidClassesPath = "build" + File.separator + "intermediates" + File.separator + "classes";
 
-    @TaskAction
-    public void migrate() {
-        ForSureExtension extension = getProject().getExtensions().findByType(ForSureExtension.class);
-        if (extension == null) {
-            throw new IllegalStateException("Must define all properties in the forsuredb extension");
-        }
+    private final Project project;
 
-        TaskLog.i(NAME, "output migrations to default class path with package: " + System.getProperty("applicationPackageName"));
+    public MigrationFileCopier(Project project) {
+        this.project = project;
+    }
 
-        String assetDir = extension.getMigrationDirectory();
-        File classesDir = packageClassesDir(extension.getAppProjectDirectory());
+    public void copyMigrations() {
+        TaskLog.i(NAME, "output migrations to default class path with package: " + getConfigProp("applicationPackageName"));
+
+        String assetDir = getConfigProp("migrationDirectory");
+        File classesDir = packageClassesDir(getConfigProp("appProjectDirectory"));
+
         TaskLog.i(NAME, "class directory: " + classesDir.getAbsolutePath());
         for (File file : classesDir.listFiles()) {
             if (file.getName().endsWith("migration")) {
@@ -118,7 +118,7 @@ public class ForSureDBMigrateTask extends DefaultTask {
 
     private File packageClassesDir(String appProjectDirectory) {
         appProjectDirectory = appProjectDirectory == null ? "" : appProjectDirectory;
-        final String packagePath = System.getProperty("applicationPackageName").replace(".", File.separator);
+        final String packagePath = getConfigProp("applicationPackageName").replace(".", File.separator);
 
         // Try the common place for java project classes to be after compilation
         String baseClassesPath = (appProjectDirectory.isEmpty() ? "" : appProjectDirectory + File.separator) + javaClassesPath;
@@ -132,7 +132,7 @@ public class ForSureDBMigrateTask extends DefaultTask {
         baseClassesPath = (appProjectDirectory.isEmpty() ? "" : appProjectDirectory + File.separator) + androidClassesPath;
         packageClassesDir = packageClassesDirGivenClassesPath(baseClassesPath, packagePath);
         if (packageClassesDir == null) {
-            throw new IllegalStateException("Could not find dir for compiled classes directory for package: " + System.getProperty("applicationPackageName"));
+            throw new IllegalStateException("Could not find dir for compiled classes directory for package: " + getConfigProp("applicationPackageName"));
         }
 
         return packageClassesDir;
@@ -162,7 +162,7 @@ public class ForSureDBMigrateTask extends DefaultTask {
             }
         }
 
-        TaskLog.e(NAME, "could not find compiled classes directory for : " + System.getProperty("applicationPackageName"));
+        TaskLog.e(NAME, "could not find compiled classes directory for : " + getConfigProp("applicationPackageName"));
         return null;
     }
 
@@ -186,5 +186,10 @@ public class ForSureDBMigrateTask extends DefaultTask {
             }
         }
         return false;
+    }
+
+    private String getConfigProp(String propertyName) {
+        ForSureDBPlugin plugin = project.getPlugins().getPlugin(ForSureDBPlugin.class);
+        return plugin.getConfigProperty(propertyName, project);
     }
 }

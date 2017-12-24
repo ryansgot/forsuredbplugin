@@ -1,4 +1,4 @@
-package com.fsryan.gradle.legacy;
+package com.fsryan.gradle.forsuredb;
 
 import org.gradle.api.tasks.TaskAction;
 
@@ -12,14 +12,12 @@ public class RegisterCustomDbmsIntegratorTask extends FSDBPluginRegistrar {
 
     @TaskAction
     public void writeToMetaInf() {
-        ForSureExtension extension = getProject().getExtensions().findByType(ForSureExtension.class);
-        if (extension == null) {
-            throw new IllegalStateException("Must set all forsuredb extension properties");
-        }
-        if (extension.getDbmsIntegratorClass() == null) {
+        String dbmsIntegratorClass = getConfigProperty("dbmsIntegratorClass");
+        if (dbmsIntegratorClass == null) {
             throw new IllegalStateException("Must set forsuredb.dbmsIntegratorClass property in order to build");
         }
-        writeMetaInfFile(extension.getResourcesDirectory(), extension.getDbmsIntegratorClass());
+
+        writeMetaInfFile(dbmsIntegratorClass);
     }
 
     @Override

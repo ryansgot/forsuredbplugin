@@ -1,5 +1,4 @@
-package com.fsryan.gradle.legacy;
-
+package com.fsryan.gradle.forsuredb;
 
 import org.gradle.api.DefaultTask;
 
@@ -18,7 +17,18 @@ public abstract class FSDBPluginRegistrar extends DefaultTask {
         this.forsuredbExtensionPropertyName = forsuredbExtensionPropertyName;
     }
 
-    protected void writeMetaInfFile(String resourcesDirectory, String implementationClassName) {
+    protected void writeMetaInfFile(String implementationClassName) {
+        writeMetaInfFile(getConfigProperty("resourcesDirectory"), implementationClassName);
+    }
+
+    protected abstract String taskName();
+
+    protected String getConfigProperty(String propertyName) {
+        ForSureDBPlugin plugin = getProject().getPlugins().getPlugin(ForSureDBPlugin.class);
+        return plugin.getConfigProperty(propertyName, getProject());
+    }
+
+    private void writeMetaInfFile(String resourcesDirectory, String implementationClassName) {
         if (resourcesDirectory == null) {
             TaskLog.w(taskName(), "Cannot register custom " + interfaceClassName + " without setting forsuredb.resourcesDirectory property");
             return;
@@ -49,6 +59,4 @@ public abstract class FSDBPluginRegistrar extends DefaultTask {
             } catch (Exception e) {}
         }
     }
-
-    protected abstract String taskName();
 }
