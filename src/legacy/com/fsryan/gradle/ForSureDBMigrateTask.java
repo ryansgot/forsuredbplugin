@@ -18,7 +18,7 @@
 
     Contact Ryan at ryansgot@gmail.com
  */
-package com.fsryan.gradle;
+package com.fsryan.gradle.legacy;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;

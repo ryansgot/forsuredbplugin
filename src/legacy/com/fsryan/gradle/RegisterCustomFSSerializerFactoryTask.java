@@ -1,4 +1,4 @@
-package com.fsryan.gradle;
+package com.fsryan.gradle.legacy;
 
 import org.gradle.api.tasks.TaskAction;
 
