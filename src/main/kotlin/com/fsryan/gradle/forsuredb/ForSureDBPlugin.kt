@@ -31,6 +31,22 @@ class ForSureDBPlugin : Plugin<Project> {
         }
     }
 
+    fun getAndroidPlugin(project: Project): Plugin<Any> {
+        if (isAndroidApplication(project)) {
+            return project.plugins.getPlugin("com.android.application")
+        }
+        return project.plugins.getPlugin("com.android.library")
+    }
+
+    fun getConfigProperty(name: String, project: Project): String {
+        val t = project.tasks.getByName("forsuredb")
+        return t.property(name) as String
+    }
+
+    fun isAndroidApplication(project: Project): Boolean = project.plugins.hasPlugin("com.android.application")
+
+    fun isAndroidLibrary(project: Project): Boolean = project.plugins.hasPlugin("com.android.library")
+
     fun migrateRequested(project: Project): Boolean = project.gradle.startParameter.taskRequests
             .map {tr -> tr.args }.flatten().filter { taskName ->
             taskName.endsWith("${project.name}:dbMigrate") || taskName.equals("dbMigrate")
@@ -58,6 +74,7 @@ open class ForSureDBSetupTask : DefaultTask() {
     @Input
     lateinit var appProjectDirectory: String
 
+    @Override
     override fun toString(): String {
         return "ForSureDBSetupTask(resourcesDirectory='$resourcesDirectory', fsSerializerFactoryClass=$fsSerializerFactoryClass, dbmsIntegratorClass=$dbmsIntegratorClass, applicationPackageName=$applicationPackageName, resultParameter=$resultParameter, recordContainer=$recordContainer, migrationDirectory=$migrationDirectory, appProjectDirectory=$appProjectDirectory)"
     }
@@ -67,21 +84,37 @@ open class ForSureDBSetupTask : DefaultTask() {
         println("setuptask: ${this}")
 
         val plugin = project.plugins.getPlugin(ForSureDBPlugin::class.java)
-        val javaPlugin = project.plugins.getPlugin(JavaPlugin::class.java)
 
-        project.tasks.withType(JavaCompile::class.java).filter { t -> !t.name.contains("Test") }.forEach { t ->
-
-            println("Attempting to send options to compiler for task: ${t.name}")
-
-            t.options.compilerArgs.add("-AapplicationPackageName=$applicationPackageName")
-            t.options.compilerArgs.add("-AresourcesDirectory=$resourcesDirectory")
-            t.options.compilerArgs.add("-AresultParameter=$resultParameter")
-            t.options.compilerArgs.add("-ArecordContainer=$recordContainer")
-            t.options.compilerArgs.add("-AmigrationDirectory=$migrationDirectory")
-            t.options.compilerArgs.add("-AappProjectDirectory=$appProjectDirectory")
-            if (plugin.migrateRequested(project)) {
-                t.options.compilerArgs.add("-AcreateMigrations=true")
+        if (plugin.isJava(project)) {
+            project.tasks.withType(JavaCompile::class.java).filter { t -> !t.name.contains("Test") }.forEach { t ->
+                t.options.compilerArgs.add("-AapplicationPackageName=$applicationPackageName")
+                t.options.compilerArgs.add("-AresourcesDirectory=$resourcesDirectory")
+                t.options.compilerArgs.add("-AresultParameter=$resultParameter")
+                t.options.compilerArgs.add("-ArecordContainer=$recordContainer")
+                t.options.compilerArgs.add("-AmigrationDirectory=$migrationDirectory")
+                t.options.compilerArgs.add("-AappProjectDirectory=$appProjectDirectory")
+                if (plugin.migrateRequested(project)) {
+                    t.options.compilerArgs.add("-AcreateMigrations=true")
+                }
             }
+        } else if (plugin.isAndroidApplication(project) || plugin.isAndroidLibrary(project)) {
+            val androidPlugin = plugin.getAndroidPlugin(project)
+            val defaultConfig = androidPlugin.javaClass.getField("defaultConfig").get(androidPlugin)
+            val javaCompileOptions = defaultConfig.javaClass.getField("javaCompileOptions").get(defaultConfig)
+            val annotationProcessorOptions = javaCompileOptions.javaClass.getField("annotationProcessorOptions").get(javaCompileOptions)
+            val arguments: MutableMap<String, String> = annotationProcessorOptions.javaClass.getField("arguments").get(annotationProcessorOptions) as MutableMap<String, String>
+            arguments.put("applicationPackageName", applicationPackageName)
+            arguments.put("resourcesDirectory", resourcesDirectory)
+            arguments.put("resultParameter", resultParameter)
+            arguments.put("recordContainer", recordContainer)
+            arguments.put("migrationDirectory", migrationDirectory)
+            arguments.put("appProjectDirectory", appProjectDirectory)
+            if (plugin.migrateRequested(project)) {
+                arguments.put("createMigrations", "true")
+            }
+        } else {
+            // TODO: techincally groovy could be supported, but I don't care so much at the moment
+            throw IllegalStateException("forsuredbplugin only supports android library, android application, and java projects.")
         }
     }
 }
@@ -91,6 +124,6 @@ open class ForSureDBMigrateTask : DefaultTask() {
     fun execute(inputs: IncrementalTaskInputs) {
         println("executing dbMigrate")
 
-
+        // TODO: move migrations from the output to the resources directory
     }
 }
