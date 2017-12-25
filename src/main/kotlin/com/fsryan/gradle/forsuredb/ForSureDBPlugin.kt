@@ -1,14 +1,12 @@
 package com.fsryan.gradle.forsuredb
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.Task
+import org.gradle.api.*
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+import java.lang.reflect.Method
 
 class ForSureDBPlugin : Plugin<Project> {
 
@@ -22,16 +20,36 @@ class ForSureDBPlugin : Plugin<Project> {
 
             // ensure that forsuredb SPI plugins are in place on assemble
             assembleTasks(project).filter { t -> !t.name.contains("Test") }.forEach { t ->
-                println("setting task ${t.name} to depend upon plugin registry tasks")
+                TaskLog.i("forsuredb", "setting task ${t.name} to depend upon plugin registry tasks")
                 t.dependsOn(registerFSSerializerFactoryTask, registerDbmsIntegratorTask)
             }
 
-            tasks.withType(JavaCompile::class.java).forEach { compileTask ->
-                compileTask.dependsOn(setupTask)
+            if (isJava(project)) {
+                TaskLog.i("forsuredb", "detected Java project")
+                tasks.withType(JavaCompile::class.java).filter {t -> !t.name.contains("Test") }.forEach { compileTask ->
+                    TaskLog.i("forsuredb", "Setting task ${compileTask.name} to depend upon the forsuredb setup task")
+                    compileTask.dependsOn(setupTask)
+                    if (!compileTask.name.contains("Test")) {
+                        dbMigrateTask.dependsOn(compileTask)
+                    }
+                }
+            } else if (isAndroid(project)) {
+                afterEvaluate {
+                    TaskLog.i("forsuredb", "detected Android project")
 
-                // TODO: android projects will have possibly many non-test compile variants that should get filtered.
-                if (!compileTask.name.contains("Test")) {
-                    dbMigrateTask.dependsOn(compileTask)
+                    // TODO: allow for the compile configuration for migrations
+                    var hasSetDbMigrateCompileTaskDependency = false
+                    getWrappedAndroidVariants(project).forEach { v ->
+                        val javaCompileTask: JavaCompile = v.getJavaCompileTask()
+                        TaskLog.i("forsuredb", "Setting processor args for java compile task: ${javaCompileTask.name}")
+                        getForsuredbTask(project).addProcessorArgs(javaCompileTask, migrateRequested(project), false)
+
+                        if (!hasSetDbMigrateCompileTaskDependency && v.isForDebugType()) {
+                            hasSetDbMigrateCompileTaskDependency = true
+                            TaskLog.i("forsuredb", "Setting ${dbMigrateTask.name} depends on ${javaCompileTask.name}")
+                            dbMigrateTask.dependsOn(javaCompileTask)
+                        }
+                    }
                 }
             }
         }
@@ -41,17 +59,25 @@ class ForSureDBPlugin : Plugin<Project> {
         t.name.contains("assemble") || t.name.contains("Assemble")
     }
 
-    fun getAndroidPlugin(project: Project): Plugin<Any> {
+    fun getConfigProperty(name: String, project: Project) = getForsuredbTask(project).property(name) as String
+
+    fun getForsuredbTask(project: Project): ForSureDBSetupTask = project.tasks.getByName("forsuredb") as ForSureDBSetupTask? ?: throw IllegalStateException("forsuredb setup task not found")
+
+    fun getWrappedAndroidVariants(project: Project): List<AndroidVariantWrapper> = getAndroidVariants(project).map { rawVariant -> AndroidVariantWrapper(rawVariant) }
+
+    fun getAndroidVariants(project: Project): DomainObjectSet<Any> {
+        val androidExtension = getAndroidExtension(project)
         if (isAndroidApplication(project)) {
-            return project.plugins.getPlugin("com.android.application")
+            val applicationVariantsM: Method = androidExtension::class.java.getDeclaredMethod("getApplicationVariants")
+            return applicationVariantsM.invoke(androidExtension) as DomainObjectSet<Any>
         }
-        return project.plugins.getPlugin("com.android.library")
+        val libraryVariantsM: Method = androidExtension::class.java.getDeclaredMethod("getLibraryVariants")
+        return libraryVariantsM.invoke(androidExtension) as DomainObjectSet<Any>
     }
 
-    fun getConfigProperty(name: String, project: Project): String {
-        val t = project.tasks.getByName("forsuredb")
-        return t.property(name) as String
-    }
+    fun getAndroidExtension(project: Project): Any = project.extensions.findByName("android") ?: throw IllegalStateException("could not find android app extension or library extension")
+
+    fun isAndroid(project: Project): Boolean = isAndroidApplication(project) || isAndroidLibrary(project)
 
     fun isAndroidApplication(project: Project): Boolean = project.plugins.hasPlugin("com.android.application")
 
@@ -84,54 +110,66 @@ open class ForSureDBSetupTask : DefaultTask() {
     @Input
     lateinit var appProjectDirectory: String
 
-    @Override
-    override fun toString(): String {
-        return "ForSureDBSetupTask(resourcesDirectory='$resourcesDirectory', fsSerializerFactoryClass=$fsSerializerFactoryClass, dbmsIntegratorClass=$dbmsIntegratorClass, applicationPackageName=$applicationPackageName, resultParameter=$resultParameter, recordContainer=$recordContainer, migrationDirectory=$migrationDirectory, appProjectDirectory=$appProjectDirectory)"
-    }
-
     @TaskAction
     fun execute(inputs: IncrementalTaskInputs) {
-        println("setuptask: ${this}")
-
         val plugin = project.plugins.getPlugin(ForSureDBPlugin::class.java)
-
+        val migrate = plugin.migrateRequested(project)
         if (plugin.isJava(project)) {
             project.tasks.withType(JavaCompile::class.java).filter { t -> !t.name.contains("Test") }.forEach { t ->
-                t.options.compilerArgs.add("-AapplicationPackageName=$applicationPackageName")
-                t.options.compilerArgs.add("-AresourcesDirectory=$resourcesDirectory")
-                t.options.compilerArgs.add("-AresultParameter=$resultParameter")
-                t.options.compilerArgs.add("-ArecordContainer=$recordContainer")
-                t.options.compilerArgs.add("-AmigrationDirectory=$migrationDirectory")
-                t.options.compilerArgs.add("-AappProjectDirectory=$appProjectDirectory")
-                if (plugin.migrateRequested(project)) {
-                    t.options.compilerArgs.add("-AcreateMigrations=true")
-                }
+                addProcessorArgs(t, migrate, true)
             }
-        } else if (plugin.isAndroidApplication(project) || plugin.isAndroidLibrary(project)) {
-            val androidPlugin = plugin.getAndroidPlugin(project)
-            val defaultConfig = androidPlugin.javaClass.getField("defaultConfig").get(androidPlugin)
-            val javaCompileOptions = defaultConfig.javaClass.getField("javaCompileOptions").get(defaultConfig)
-            val annotationProcessorOptions = javaCompileOptions.javaClass.getField("annotationProcessorOptions").get(javaCompileOptions)
-            val arguments: MutableMap<String, String> = annotationProcessorOptions.javaClass.getField("arguments").get(annotationProcessorOptions) as MutableMap<String, String>
-            arguments.put("applicationPackageName", applicationPackageName)
-            arguments.put("resourcesDirectory", resourcesDirectory)
-            arguments.put("resultParameter", resultParameter)
-            arguments.put("recordContainer", recordContainer)
-            arguments.put("migrationDirectory", migrationDirectory)
-            arguments.put("appProjectDirectory", appProjectDirectory)
-            if (plugin.migrateRequested(project)) {
-                arguments.put("createMigrations", "true")
-            }
+        } else if (plugin.isAndroid(project)) {
+            // do nothing because annotation processor options set in afterEvaluate block
         } else {
             // TODO: techincally groovy could be supported, but I don't care so much at the moment
             throw IllegalStateException("forsuredbplugin only supports android library, android application, and java projects.")
         }
     }
+
+    override fun toString(): String {
+        return "ForSureDBSetupTask(resourcesDirectory='$resourcesDirectory', fsSerializerFactoryClass=$fsSerializerFactoryClass, dbmsIntegratorClass='$dbmsIntegratorClass', applicationPackageName='$applicationPackageName', resultParameter='$resultParameter', recordContainer='$recordContainer', migrationDirectory='$migrationDirectory', appProjectDirectory='$appProjectDirectory')"
+    }
+
+    fun addProcessorArgs(t: JavaCompile, migrate: Boolean, includeGeneratedAnnotation: Boolean) {
+        addProcessorArg(t, "applicationPackageName", applicationPackageName)
+        addProcessorArg(t, "resourcesDirectory", resourcesDirectory)
+        addProcessorArg(t, "resultParameter", resultParameter)
+        addProcessorArg(t, "recordContainer", recordContainer)
+        addProcessorArg(t, "migrationDirectory", migrationDirectory)
+        addProcessorArg(t, "appProjectDirectory", appProjectDirectory)
+        addProcessorArg(t, "addGeneratedAnnotation", if (includeGeneratedAnnotation) "true" else "false")
+        if (migrate) {
+            addProcessorArg(t, "createMigrations", "true")
+        }
+    }
+
+    private fun addProcessorArg(t: JavaCompile, key: String, value: String) {
+        t.options.compilerArgs.add("-Aforsuredb.$key=$value")
+    }
 }
 
-open class ForSureDBMigrateTask : DefaultTask() {
+open class ForSureDBMigrateTask: DefaultTask() {
     @TaskAction
     fun execute(inputs: IncrementalTaskInputs) {
         MigrationFileCopier(project).copyMigrations()
     }
+}
+
+class AndroidVariantWrapper(val variant: Any) {
+
+    fun isForDebugType(): Boolean = getBuildType().isDebuggable()
+
+    fun getJavaCompileTask(): JavaCompile = javaCompileM().invoke(variant) as JavaCompile
+    private fun javaCompileM(): Method = variant::class.java.getDeclaredMethod("getJavaCompile")
+
+    fun getName(): String = nameM().invoke(variant) as String
+    private fun nameM(): Method = variant::class.java.getDeclaredMethod("getName")
+
+    fun getBuildType(): AndroidBuildType = AndroidBuildType(buildTypeM().invoke(variant))
+    private fun buildTypeM(): Method = variant::class.java.getDeclaredMethod("getBuildType")
+}
+
+class AndroidBuildType(val buildType: Any) {
+    fun isDebuggable(): Boolean = isDebuggableM().invoke(buildType) as Boolean
+    private fun isDebuggableM(): Method = buildType::class.java.getDeclaredMethod("isDebuggable")
 }
