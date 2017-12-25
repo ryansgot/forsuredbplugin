@@ -18,7 +18,7 @@
 
     Contact Ryan at ryansgot@gmail.com
  */
-package com.fsryan.gradle;
+package com.fsryan.gradle.forsuredb;
 
 public class TaskLog {
 
