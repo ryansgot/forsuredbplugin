@@ -52,6 +52,11 @@ forsuredb {
 ```
 
 ## Revisions
+
+### 0.5.0
+- Only valid for use with forsuredbcompiler 0.13.0
+- reworks the plugin to be compatible with android and with java projects
+
 ### 0.4.0
 - Added task to properly configure the DBMSIntegrator plugin whenever app is assembled
 
