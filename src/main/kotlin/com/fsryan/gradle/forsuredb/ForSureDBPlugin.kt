@@ -15,6 +15,7 @@ class ForSureDBPlugin : Plugin<Project> {
             val setupTask = tasks.create("forsuredb", ForSureDBSetupTask::class.java)
             setupTask.outputs.upToDateWhen { false }
             val dbMigrateTask = tasks.create("dbMigrate", ForSureDBMigrateTask::class.java)
+            dbMigrateTask.outputs.upToDateWhen { false }
             val registerDbmsIntegratorTask = tasks.create(RegisterCustomDbmsIntegratorTask.NAME, RegisterCustomDbmsIntegratorTask::class.java)
             val registerFSSerializerFactoryTask = tasks.create(RegisterCustomFSSerializerFactoryTask.NAME, RegisterCustomFSSerializerFactoryTask::class.java)
 
@@ -153,6 +154,8 @@ open class ForSureDBMigrateTask: DefaultTask() {
     fun execute(inputs: IncrementalTaskInputs) {
         MigrationFileCopier(project).copyMigrations()
     }
+
+
 }
 
 class AndroidVariantWrapper(val variant: Any) {
