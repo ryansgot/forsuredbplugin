@@ -6,7 +6,22 @@ The following are the advantages of using the plugin that you don't get otherwis
 
 * Integration of forsuredb with your normal build process
 * Automatic copying of generated assets (migration files) to your application's assets directory after successful compilation.
-* Integration with other gradle plugins that should be able to run the forsuredbcompiler
+* Automatic generation of the correct Java Service Provider Interface declaration
+
+If you don't use forsuredbplugin, then you have to:
+* Know the correct key-value pairs for annotation processor arguments and how to pass them to your annotation processor
+* Know how to set up the Java Service Provider Interface declarations for your `DBMSIntegrator` and `FSSerializerFactory` classes
+* Know how migration files are generated and when/how/where to copy them in order to store them in source control and bundle them in the app
+
+## What kind of projects does forsuredbplugin work with?
+
+| Project Type | Works? | Note |
+| ------------ | ------ | ---- |
+| Java | Yes | You need some configuration that will run annotation processing for you |
+| Android (Java only) | Yes | You should use the `annotationProcessor` configuration for the forsuredbcompiler dependency |
+| Kotlin | Yes | You should use the `kapt` configuration provided by the `kotlin-kapt` plugin for the forsuredbcompiler dependency |
+| Android (Kotlin) | Yes | You should use the `kapt` configuration provided by the `kotlin-kapt` plugin for the forsuredbcompiler dependency |
+| Groovy | No | It's probably not difficult to adapt the existing code to make this work. Feel free to give it a shot and put up a PR if you're interested. |
 
 ## How do I configure the forsuredbplugin?
 Add this to your build.gradle file:
@@ -21,7 +36,7 @@ buildscript {
 }
 ```
 
-Then add whatever you need to use the annotation processor, for example (if you're using the com.neenbedankt.gradle.plugins:android-apt:1.6 annotation processor):
+Pay attention to the order in which the plugins are applied. forsuredb needs to be applied before kotlin if you're using kotlin.
 ```groovy
 apply plugin: 'com.android.application' // or 'com.android.library' or 'java' or 'kotlin'
 apply plugin: 'com.fsryan.gradle.forsuredb'
@@ -29,9 +44,9 @@ apply plugin: 'kotlin-android'// if kotlin-android
 apply plugin: 'kotlin-kapt' // if kotlin or kotlin-android
 
 dependencies {
-    annotationProcessor 'com.fsryan.forsuredb:forsuredbcompiler:version'   // if Android but not kotlin-android
-    apt 'com.fsryan.forsuredb:forsuredbcompiler:version'    // if java (where apt is your annotation processor configuration)
-    kapt 'com.fsryan.forsuredb:forsuredbcompiler:version'   // if kotlin or kotlin-android
+    annotationProcessor 'com.fsryan.forsuredb:forsuredbcompiler:version'    // if Android but not kotlin-android
+    apt 'com.fsryan.forsuredb:forsuredbcompiler:version'                    // if java (where apt is your annotation processor configuration)
+    kapt 'com.fsryan.forsuredb:forsuredbcompiler:version'                   // if kotlin or kotlin-android
 }
 
 forsuredb {
@@ -41,7 +56,7 @@ forsuredb {
     migrationDirectory = 'app/src/main/assets'                  // The assests directory for your app relative to the working directory of your build
     appProjectDirectory = 'app'                                 // The base directory for your app relative to the working directory of your build
     resourcesDirectory = 'app/src/main/resources'               // The directory that will contain META-INF/services so that your plugins can get picked up at runtime
-    fsSerializerFactoryClass = 'my.json.adapter.FactoryClass'  // (optional) A class implementing FSSerializerFactory used to create your own custom serializer for object document storage
+    fsSerializerFactoryClass = 'my.json.adapter.FactoryClass'   // (optional) A class implementing FSSerializerFactory used to create your own custom serializer for object document storage
     dbmsIntegratorClass = 'com.fsryan.forsuredb.sqlitelib.SqlGenerator' // NOT OPTIONAL as of fosuredbplugin 0.4.0
 }
 ```
@@ -49,8 +64,8 @@ forsuredb {
 ## Revisions
 
 ### 0.6.0
-- fixes bugs integrating with java (non-android projects)
-- fixes bugs integrating with kotlin (and kotlin-android projects)
+- fixes bugs integrating with java-only projects
+- fixes bugs integrating with kotlin and kotlin-android projects
 
 ### 0.5.0
 - Only valid for use with forsuredbcompiler 0.13.0
