@@ -36,7 +36,7 @@ buildscript {
 }
 ```
 
-Pay attention to the order in which the plugins are applied. forsuredb needs to be applied before kotlin if you're using kotlin.
+Pay attention to the order in which the plugins are applied. forsuredb needs to be applied before kotlin-android if you're using kotlin in an android project. If the order is wrong, then the annotation processor will fail.
 ```groovy
 apply plugin: 'com.android.application' // or 'com.android.library' or 'java' or 'kotlin'
 apply plugin: 'com.fsryan.gradle.forsuredb'
