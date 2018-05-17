@@ -23,15 +23,14 @@ class ForSureDBPlugin implements Plugin<Project> {
         def registerDbmsIntegratorTask = project.tasks.create(RegisterCustomDbmsIntegratorTask.NAME, RegisterCustomDbmsIntegratorTask)
         def registerFSSerializerFactoryTask = project.tasks.create(RegisterCustomFSSerializerFactoryTask.NAME, RegisterCustomFSSerializerFactoryTask)
 
-        // ensure that forsuredb SPI plugins are in place on assemble
-        assembleTasks(project).findAll { t -> !t.name.contains("Test") }.forEach { t ->
-            TaskLog.i("forsuredb", "setting task ${t.name} to depend upon plugin registry tasks")
-            t.dependsOn(registerFSSerializerFactoryTask, registerDbmsIntegratorTask)
-        }
-
         if (isJava(project)) {
             TaskLog.i("forsuredb", "detected Java project")
             project.afterEvaluate {
+                // ensure that forsuredb SPI plugins are in place on assemble
+                assembleTasks(project).findAll { t -> !t.name.contains("Test") }.forEach { t ->
+                    dependUponPluginRegistryTasks(project, t)
+                }
+
                 project.tasks.withType(JavaCompile).findAll { !it.name.contains("Test") }.forEach { t ->
                     TaskLog.i("forsuredb", "Setting processor arguments for ${t.name}")
                     addProcessorArgs(project, t, migrateRequested(project), true)
@@ -54,6 +53,8 @@ class ForSureDBPlugin implements Plugin<Project> {
                 findAndroidVariants(project).forEach { v ->
                     TaskLog.i("forsuredb", "Setting processor args for java compile task: ${v.javaCompile.name}")
                     addProcessorArgs(project, v.javaCompile, migrateRequested(project), false)
+                    dependUponPluginRegistryTasks(project, assembleTaskOfVariant(project, v))
+
                     if (!hasSetDbMigrateCompileTaskDependency && v.buildType.debuggable) {
                         hasSetDbMigrateCompileTaskDependency = true
                         TaskLog.i("forsuredb", "Setting ${dbMigrateTask.name} depends on ${v.javaCompile.name}")
@@ -69,6 +70,28 @@ class ForSureDBPlugin implements Plugin<Project> {
         } else {
             throw new IllegalStateException("Could not detect project type--not Android and not Java")
         }
+    }
+
+    static def assembleTaskOfVariant(Project project, v) {
+        return project.tasks.findByName("assemble${GUtil.toCamelCase(v.name)}")
+    }
+
+    static def dependUponPluginRegistryTasks(Project project, Task t) {
+        if (t == null) {
+            throw new IllegalArgumentException("Cannot set plugin registry tasks as dependency for null task")
+        }
+
+        TaskLog.i("forsuredb", "setting task ${t.name} to depend upon plugin registry tasks")
+        t.dependsOn(registerCustomDbmsIntegratorTask(project))
+        t.dependsOn(registerCustomFSSerializerFactoryTask(project))
+    }
+
+    static RegisterCustomDbmsIntegratorTask registerCustomDbmsIntegratorTask(Project project) {
+        return project.tasks.findByName(RegisterCustomDbmsIntegratorTask.NAME)
+    }
+
+    static RegisterCustomFSSerializerFactoryTask registerCustomFSSerializerFactoryTask(Project project) {
+        return project.tasks.findByName(RegisterCustomFSSerializerFactoryTask.NAME)
     }
 
     static def findAndroidVariants(Project project) {
@@ -122,10 +145,6 @@ class ForSureDBPlugin implements Plugin<Project> {
         addKaptArguments(kaptExt, forsuredbExt, migrate, includeGeneratedAnnotation)
     }
 
-    private static ForSureDBExt getForSureDBExt(Project project) {
-        return project.extensions.findByType(ForSureDBExt)
-    }
-
     private static def addProcessorArg(JavaCompile t, String key, String value) {
         t.options.compilerArgs.add("-Aforsuredb.$key=$value")
     }
@@ -162,6 +181,7 @@ class ForSureDBExt {
 }
 
 class ForSureDBMigrateTask extends DefaultTask {
+
     @TaskAction
     def moveMigrationFiles(IncrementalTaskInputs inputs) {
         ForSureDBExt forsuredbExt = project.extensions.findByType(ForSureDBExt)
@@ -176,10 +196,10 @@ class ForSureDBMigrateTask extends DefaultTask {
             throw new IllegalStateException("Detected migrationDirectory path was not a directory: ${forsuredbExt.migrationDirectory}")
         }
 
-        new FileNameByRegexFinder().getFileNames(project.buildDir.absolutePath + File.separator + '', /.*\.migration/).forEach { fPath ->
+        new FileNameByRegexFinder().getFileNames(project.buildDir.absolutePath + File.separator + '', /.*\.migration$/).forEach { fPath ->
             String migFile = fPath.substring(fPath.lastIndexOf(File.separator) + 1) + ".json"
             TaskLog.i("dbMigrate", "copying migration file ${fPath} to ${new File(outptDir, migFile)}")
-            Files.copy(Paths.get(fPath), Paths.get(outptDir.absolutePath, migFile + ".json"))
+            Files.copy(Paths.get(fPath), Paths.get(outptDir.absolutePath, migFile))
         }
     }
 
