@@ -16,27 +16,22 @@ buildscript {
         jcenter()
     }
     dependencies {
-        /*
-         * You'll need to ensure that you include a plugin to run annotation processing.
-         * For Android: com.neenbedankt.gradle.plugins:android-apt:1.6 seems to work well.
-         * For Java, I haven't yet tested an existing annotation processor plugin, so I can't make a suggestion.
-         */
-        classpath 'com.fsryan:forsuredbplugin:0.4.0'
+        classpath 'com.fsryan:forsuredbplugin:0.6.0'
     }
 }
 ```
 
 Then add whatever you need to use the annotation processor, for example (if you're using the com.neenbedankt.gradle.plugins:android-apt:1.6 annotation processor):
 ```groovy
-apply plugin: 'android-apt'
-apply plugin: apply plugin: 'com.fsryan.forsuredb'
-/* ... */
+apply plugin: 'com.android.application' // or 'com.android.library' or 'java' or 'kotlin'
+apply plugin: 'com.fsryan.gradle.forsuredb'
+apply plugin: 'kotlin-android'// if kotlin-android
+apply plugin: 'kotlin-kapt' // if kotlin or kotlin-android
+
 dependencies {
-    /* ... */
-    compile 'com.fsryan.forsuredb:sqlitelib:0.4.0'              // Necessary only if you use the dbmsIntegratorClass value demonstrated in this example--but you don't absolutely need this specific one
-    compile 'com.fsryan.forsuredb:forsuredbapi:0.9.0'
-    apt 'com.fsryan.forsuredb:forsuredbcompiler:0.9.0'
-    /* ... */
+    annotationProcessor 'com.fsryan.forsuredb:forsuredbcompiler:version'   // if Android but not kotlin-android
+    apt 'com.fsryan.forsuredb:forsuredbcompiler:version'    // if java (where apt is your annotation processor configuration)
+    kapt 'com.fsryan.forsuredb:forsuredbcompiler:version'   // if kotlin or kotlin-android
 }
 
 forsuredb {
@@ -52,6 +47,10 @@ forsuredb {
 ```
 
 ## Revisions
+
+### 0.6.0
+- fixes bugs integrating with java (non-android projects)
+- fixes bugs integrating with kotlin (and kotlin-android projects)
 
 ### 0.5.0
 - Only valid for use with forsuredbcompiler 0.13.0
