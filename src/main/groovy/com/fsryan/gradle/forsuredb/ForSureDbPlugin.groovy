@@ -53,7 +53,7 @@ class ForSureDBPlugin implements Plugin<Project> {
                 findAndroidVariants(project).forEach { v ->
                     TaskLog.i("forsuredb", "Setting processor args for java compile task: ${v.javaCompile.name}")
                     addProcessorArgs(project, v.javaCompile, migrateRequested(project), false)
-                    dependUponPluginRegistryTasks(project, assembleTaskOfVariant(project, v))
+                    dependUponPluginRegistryTasks(project, v.getMergeResources())
 
                     if (!hasSetDbMigrateCompileTaskDependency && v.buildType.debuggable) {
                         hasSetDbMigrateCompileTaskDependency = true
