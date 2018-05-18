@@ -31,7 +31,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.fsryan:forsuredbplugin:0.6.0'
+        classpath 'com.fsryan:forsuredbplugin:0.6.1'
     }
 }
 ```
@@ -62,6 +62,9 @@ forsuredb {
 ```
 
 ## Revisions
+
+### 0.6.1
+- fixes a bug wherein the SPI declarations would not get added to the resulting Android apk if they did not exist prior to assembly
 
 ### 0.6.0
 - fixes bugs integrating with java-only projects
