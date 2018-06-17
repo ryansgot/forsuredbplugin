@@ -24,7 +24,22 @@ class ForSureDBPlugin implements Plugin<Project> {
         def registerFSSerializerFactoryTask = project.tasks.create(RegisterCustomFSSerializerFactoryTask.NAME, RegisterCustomFSSerializerFactoryTask)
 
         if (isJava(project)) {
-            TaskLog.i("forsuredb", "detected Java project")
+            TaskLog.i("detected Java project")
+
+
+            if (isKotlin(project)) {
+                TaskLog.i('detected kotlin project')
+                def kaptExt = kaptExt(project)
+                if (kaptExt == null) {
+                    throw new IllegalStateException("Must apply kotlin-kapt plugin to use forsuredb in a kotlin project")
+                }
+                addKaptArguments(kaptExt, fsdbExt(project), migrateRequested(project), true)
+                findNonTestKotlinCompileTasks(project).forEach { t->
+                    TaskLog.i("setting task ${dbMigrateTask.name} depends upon ${t.name}")
+                    dbMigrateTask.dependsOn(t)
+                }
+            }
+
             project.afterEvaluate {
                 // ensure that forsuredb SPI plugins are in place on assemble
                 assembleTasks(project).findAll { t -> !t.name.contains("Test") }.forEach { t ->
@@ -36,11 +51,6 @@ class ForSureDBPlugin implements Plugin<Project> {
                     addProcessorArgs(project, t, migrateRequested(project), true)
                     if (!t.name.contains("Test")) {
                         dbMigrateTask.dependsOn(t)
-                        def kotlinCompileTask = project.tasks.findByName('compileKotlin')
-                        if (kotlinCompileTask != null) {
-                            TaskLog.i("forsuredb", "Setting ${dbMigrateTask.name} depends on ${kotlinCompileTask.name}")
-                            dbMigrateTask.dependsOn(kotlinCompileTask)
-                        }
                     }
                 }
             }
@@ -71,6 +81,26 @@ class ForSureDBPlugin implements Plugin<Project> {
         } else {
             throw new IllegalStateException("Could not detect project type--not Android and not Java")
         }
+    }
+
+    static def findNonTestKotlinCompileTasks(Project p) {
+        return p.tasks.findAll { !it.name.contains('Test') && it.name.contains('compile') && it.name.contains('Kotlin') }
+    }
+
+    static ForSureDBExt fsdbExt(Project project) {
+        return project.extensions.findByType(ForSureDBExt)
+    }
+
+    static def kaptExt(Project project) {
+        return project.extensions.findByName('kapt')
+    }
+
+    static boolean isKotlin(Project p) {
+        return p.plugins.hasPlugin('kotlin')
+    }
+
+    static boolean hasKapt(Project p) {
+        return p.extensions.findByName('kotlin-kapt') != null
     }
 
     static def assembleTaskOfVariant(Project project, v) {
@@ -141,6 +171,7 @@ class ForSureDBPlugin implements Plugin<Project> {
 
         def kaptExt = project.extensions.findByName('kapt')
         if (kaptExt == null) {
+            TaskLog.w("Did not find kapt extension property, not adding processor args to kapt")
             return
         }
         addKaptArguments(kaptExt, forsuredbExt, migrate, includeGeneratedAnnotation)
@@ -151,6 +182,7 @@ class ForSureDBPlugin implements Plugin<Project> {
     }
 
     private static def addKaptArguments(kaptExt, ForSureDBExt forsuredbExt, boolean migrate, boolean includeGeneratedAnnotation) {
+        TaskLog.i("Adding processor args to kapt")
         kaptExt.arguments {
             arg("forsuredb.applicationPackageName", forsuredbExt.applicationPackageName)
             arg("forsuredb.resourcesDirectory", forsuredbExt.resourcesDirectory)
