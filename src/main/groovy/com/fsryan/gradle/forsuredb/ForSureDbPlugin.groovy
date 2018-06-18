@@ -6,8 +6,10 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.TaskCollection
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.util.GUtil
 
 import java.nio.file.Files
@@ -40,19 +42,17 @@ class ForSureDBPlugin implements Plugin<Project> {
                 }
             }
 
-            project.afterEvaluate {
-                // ensure that forsuredb SPI plugins are in place on assemble
-                assembleTasks(project).findAll { t -> !t.name.contains("Test") }.forEach { t ->
-                    dependUponPluginRegistryTasks(project, t)
+            project.tasks.withType(JavaCompile).findAll { !it.name.contains("Test") }.forEach { t ->
+                TaskLog.i("forsuredb", "Setting processor arguments for ${t.name}")
+                addProcessorArgs(project, t, migrateRequested(project), true)
+                if (!t.name.contains("Test")) {
+                    dbMigrateTask.dependsOn(t)
                 }
+            }
 
-                project.tasks.withType(JavaCompile).findAll { !it.name.contains("Test") }.forEach { t ->
-                    TaskLog.i("forsuredb", "Setting processor arguments for ${t.name}")
-                    addProcessorArgs(project, t, migrateRequested(project), true)
-                    if (!t.name.contains("Test")) {
-                        dbMigrateTask.dependsOn(t)
-                    }
-                }
+            // ensure that forsuredb SPI plugins are in place on processing resources
+            processResourcesTasks(project).findAll { t -> !t.name.contains("Test") }.forEach { t ->
+                dependUponPluginRegistryTasks(project, t)
             }
         } else if (isAndroid(project)) {
             project.afterEvaluate {
@@ -112,17 +112,17 @@ class ForSureDBPlugin implements Plugin<Project> {
             throw new IllegalArgumentException("Cannot set plugin registry tasks as dependency for null task")
         }
 
-        TaskLog.i("forsuredb", "setting task ${t.name} to depend upon plugin registry tasks")
+        TaskLog.i("setting task ${t.name} to depend upon plugin registry tasks")
         t.dependsOn(registerCustomDbmsIntegratorTask(project))
         t.dependsOn(registerCustomFSSerializerFactoryTask(project))
     }
 
     static RegisterCustomDbmsIntegratorTask registerCustomDbmsIntegratorTask(Project project) {
-        return project.tasks.findByName(RegisterCustomDbmsIntegratorTask.NAME)
+        return project.tasks.withType(RegisterCustomDbmsIntegratorTask).first()
     }
 
     static RegisterCustomFSSerializerFactoryTask registerCustomFSSerializerFactoryTask(Project project) {
-        return project.tasks.findByName(RegisterCustomFSSerializerFactoryTask.NAME)
+        return project.tasks.withType(RegisterCustomFSSerializerFactoryTask).first()
     }
 
     static def findAndroidVariants(Project project) {
@@ -132,8 +132,8 @@ class ForSureDBPlugin implements Plugin<Project> {
         return project.android.hasProperty('applicationVariants') ? project.android.applicationVariants : project.android.libraryVariants
     }
 
-    static Set<Task> assembleTasks(Project project) {
-        return project.tasks.findAll { it.name.contains("assemble") || it.name.contains("Assemble") }
+    static TaskCollection<Task> processResourcesTasks(Project project) {
+        return project.tasks.withType(ProcessResources)
     }
 
     static def isAndroid(Project project) {
@@ -159,7 +159,7 @@ class ForSureDBPlugin implements Plugin<Project> {
     }
 
     static def addProcessorArgs(Project project, JavaCompile t, boolean migrate, boolean includeGeneratedAnnotation) {
-        def forsuredbExt = project.extensions.findByType(ForSureDBExt)
+        def forsuredbExt = fsdbExt(project)
         addProcessorArg(t, "applicationPackageName", forsuredbExt.applicationPackageName)
         addProcessorArg(t, "resourcesDirectory", forsuredbExt.resourcesDirectory)
         addProcessorArg(t, "resultParameter", forsuredbExt.resultParameter)
