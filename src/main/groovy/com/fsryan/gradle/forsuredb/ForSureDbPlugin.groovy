@@ -28,7 +28,6 @@ class ForSureDBPlugin implements Plugin<Project> {
         if (isJava(project)) {
             TaskLog.i("detected Java project")
 
-
             if (isKotlin(project)) {
                 TaskLog.i('detected kotlin project')
                 def kaptExt = kaptExt(project)
@@ -36,23 +35,23 @@ class ForSureDBPlugin implements Plugin<Project> {
                     throw new IllegalStateException("Must apply kotlin-kapt plugin to use forsuredb in a kotlin project")
                 }
                 addKaptArguments(kaptExt, fsdbExt(project), migrateRequested(project), true)
-                findNonTestKotlinCompileTasks(project).forEach { t->
-                    TaskLog.i("setting task ${dbMigrateTask.name} depends upon ${t.name}")
-                    dbMigrateTask.dependsOn(t)
-                }
-            }
-
-            project.tasks.withType(JavaCompile).findAll { !it.name.contains("Test") }.forEach { t ->
-                TaskLog.i("Setting processor arguments for ${t.name}")
-                addProcessorArgs(project, t, migrateRequested(project), true)
-                if (!t.name.contains("Test")) {
-                    dbMigrateTask.dependsOn(t)
-                }
+                findNonTestKotlinCompileTasks(project).forEach { enforceTaskDependency(it, dbMigrateTask) }
             }
 
             // ensure that forsuredb SPI plugins are in place on processing resources
             processResourcesTasks(project).findAll { t -> !t.name.contains("Test") }.forEach { t ->
                 dependUponPluginRegistryTasks(project, t)
+                if (migrateRequested(project)) {
+                    enforceTaskDependency(dbMigrateTask, t)
+                }
+            }
+
+            project.afterEvaluate {
+                project.tasks.withType(JavaCompile).findAll { !it.name.contains("Test") }.forEach { t ->
+                    TaskLog.i("Setting processor arguments for ${t.name}")
+                    addProcessorArgs(project, t, migrateRequested(project), true)
+                    enforceTaskDependency(t, dbMigrateTask)
+                }
             }
         } else if (isAndroid(project)) {
             project.afterEvaluate {
@@ -67,13 +66,11 @@ class ForSureDBPlugin implements Plugin<Project> {
 
                     if (!hasSetDbMigrateCompileTaskDependency && v.buildType.debuggable) {
                         hasSetDbMigrateCompileTaskDependency = true
-                        TaskLog.i("Setting ${dbMigrateTask.name} depends on ${v.javaCompile.name}")
-                        dbMigrateTask.dependsOn(v.javaCompile)
-                        v.getMergeAssets().dependsOn(dbMigrateTask)
+                        enforceTaskDependency(v.javaCompile, dbMigrateTask)
+                        enforceTaskDependency(dbMigrateTask, v.getMergeAssets())
                         def kotlinCompileTask = project.tasks.findByName('compile' + GUtil.toCamelCase(v.name) + 'Kotlin')
                         if (kotlinCompileTask != null) {
-                            TaskLog.i("Setting ${dbMigrateTask.name} depends on ${kotlinCompileTask.name}")
-                            dbMigrateTask.dependsOn(kotlinCompileTask)
+                            enforceTaskDependency(kotlinCompileTask, dbMigrateTask)
                         }
                     }
                 }
@@ -81,6 +78,11 @@ class ForSureDBPlugin implements Plugin<Project> {
         } else {
             throw new IllegalStateException("Could not detect project type--not Android and not Java")
         }
+    }
+
+    static void enforceTaskDependency(Task dependency, Task dependent) {
+        TaskLog.i("Setting ${dependent.name} depends on ${dependency.name}")
+        dependent.dependsOn(dependency)
     }
 
     static def findNonTestKotlinCompileTasks(Project p) {
@@ -103,10 +105,8 @@ class ForSureDBPlugin implements Plugin<Project> {
         if (t == null) {
             throw new IllegalArgumentException("Cannot set plugin registry tasks as dependency for null task")
         }
-
-        TaskLog.i("setting task ${t.name} to depend upon plugin registry tasks")
-        t.dependsOn(registerCustomDbmsIntegratorTask(project))
-        t.dependsOn(registerCustomFSSerializerFactoryTask(project))
+        enforceTaskDependency(registerCustomDbmsIntegratorTask(project), t)
+        enforceTaskDependency(registerCustomFSSerializerFactoryTask(project), t)
     }
 
     static RegisterCustomDbmsIntegratorTask registerCustomDbmsIntegratorTask(Project project) {
