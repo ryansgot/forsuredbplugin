@@ -63,6 +63,9 @@ forsuredb {
 
 ## Revisions
 
+### 0.6.2
+- fixes issues in java and kotlin projects where SPI declarations and migrations would not get added to the processed resources. Now you can run in one command: `./gradlew dbMigrate run`, and regardless of whether your migrations or SPI declarations existed prior to this command, the tasks will be run in the correct order to be included in the run.
+
 ### 0.6.1
 - fixes a bug wherein the SPI declarations would not get added to the resulting Android apk if they did not exist prior to assembly
 
