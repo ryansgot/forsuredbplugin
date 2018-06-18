@@ -43,7 +43,7 @@ class ForSureDBPlugin implements Plugin<Project> {
             }
 
             project.tasks.withType(JavaCompile).findAll { !it.name.contains("Test") }.forEach { t ->
-                TaskLog.i("forsuredb", "Setting processor arguments for ${t.name}")
+                TaskLog.i("Setting processor arguments for ${t.name}")
                 addProcessorArgs(project, t, migrateRequested(project), true)
                 if (!t.name.contains("Test")) {
                     dbMigrateTask.dependsOn(t)
@@ -56,23 +56,23 @@ class ForSureDBPlugin implements Plugin<Project> {
             }
         } else if (isAndroid(project)) {
             project.afterEvaluate {
-                TaskLog.i("forsuredb", "detected Android project")
+                TaskLog.i("detected Android project")
 
                 // TODO: allow for the compile configuration for migrations
                 def hasSetDbMigrateCompileTaskDependency = false
                 findAndroidVariants(project).forEach { v ->
-                    TaskLog.i("forsuredb", "Setting processor args for java compile task: ${v.javaCompile.name}")
+                    TaskLog.i("Setting processor args for java compile task: ${v.javaCompile.name}")
                     addProcessorArgs(project, v.javaCompile, migrateRequested(project), false)
                     dependUponPluginRegistryTasks(project, v.getMergeResources())
 
                     if (!hasSetDbMigrateCompileTaskDependency && v.buildType.debuggable) {
                         hasSetDbMigrateCompileTaskDependency = true
-                        TaskLog.i("forsuredb", "Setting ${dbMigrateTask.name} depends on ${v.javaCompile.name}")
+                        TaskLog.i("Setting ${dbMigrateTask.name} depends on ${v.javaCompile.name}")
                         dbMigrateTask.dependsOn(v.javaCompile)
                         v.getMergeAssets().dependsOn(dbMigrateTask)
                         def kotlinCompileTask = project.tasks.findByName('compile' + GUtil.toCamelCase(v.name) + 'Kotlin')
                         if (kotlinCompileTask != null) {
-                            TaskLog.i("forsuredb", "Setting ${dbMigrateTask.name} depends on ${kotlinCompileTask.name}")
+                            TaskLog.i("Setting ${dbMigrateTask.name} depends on ${kotlinCompileTask.name}")
                             dbMigrateTask.dependsOn(kotlinCompileTask)
                         }
                     }
@@ -97,14 +97,6 @@ class ForSureDBPlugin implements Plugin<Project> {
 
     static boolean isKotlin(Project p) {
         return p.plugins.hasPlugin('kotlin')
-    }
-
-    static boolean hasKapt(Project p) {
-        return p.extensions.findByName('kotlin-kapt') != null
-    }
-
-    static def assembleTaskOfVariant(Project project, v) {
-        return project.tasks.findByName("assemble${GUtil.toCamelCase(v.name)}")
     }
 
     static def dependUponPluginRegistryTasks(Project project, Task t) {
