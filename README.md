@@ -31,7 +31,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.fsryan:forsuredbplugin:0.6.1'
+        classpath 'com.fsryan.gradle.forsuredb:forsuredbplugin:0.6.2'
     }
 }
 ```
