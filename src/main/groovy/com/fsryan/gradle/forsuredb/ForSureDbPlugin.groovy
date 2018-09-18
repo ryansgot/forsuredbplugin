@@ -247,11 +247,15 @@ class ForSureDBMigrateTask extends DefaultTask {
             throw new IllegalStateException("Detected migrationDirectory path was not a directory: ${forsuredbExt.migrationDirectory}")
         }
 
-        new FileNameByRegexFinder().getFileNames(project.buildDir.absolutePath + File.separator + '', /.*\.migration$/).forEach { fPath ->
-            String migFile = fPath.substring(fPath.lastIndexOf(File.separator) + 1) + ".json"
-            TaskLog.i("dbMigrate", "copying migration file ${fPath} to ${new File(outptDir, migFile)}")
-            Files.copy(Paths.get(fPath), Paths.get(outptDir.absolutePath, migFile))
-        }
+        new FileNameByRegexFinder()
+                .getFileNames(project.buildDir.absolutePath + File.separator + '', /.*\.migration$/)
+                .forEach { fPath ->
+                    String migFile = fPath.substring(fPath.lastIndexOf(File.separator) + 1) + ".json"
+                    if (!new File(outptDir, migFile).exists()) {
+                        TaskLog.i("dbMigrate", "copying migration file ${fPath} to ${new File(outptDir, migFile)}")
+                        Files.copy(Paths.get(fPath), Paths.get(outptDir.absolutePath, migFile))
+                    }
+                }
     }
 
     // Previous versions used to require that you specify paths relative to root project base directory.
