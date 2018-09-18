@@ -31,7 +31,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.fsryan.gradle.forsuredb:forsuredbplugin:0.6.2'
+        classpath 'com.fsryan.gradle.forsuredb:forsuredbplugin:0.6.3'
     }
 }
 ```
@@ -62,6 +62,10 @@ forsuredb {
 ```
 
 ## Revisions
+
+### 0.6.3
+- Fixes issue with Android and Fabric by not attempting to add migration assets to assembled binary in the same build as a `dbMigrate` is being run (for an Android project). The alternative is to run `dbMigrate` and any task that merges assets as separate builds, with the `dbMigrate` build run first so that the output assets are picked up by the second build.
+- Fixes issue in a Java/Kotlin project (non-android) where migration asset copying was failing.
 
 ### 0.6.2
 - fixes issues in java and kotlin projects where SPI declarations and migrations would not get added to the processed resources. Now you can run in one command: `./gradlew dbMigrate run`, and regardless of whether your migrations or SPI declarations existed prior to this command, the tasks will be run in the correct order to be included in the run.
