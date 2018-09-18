@@ -67,7 +67,17 @@ class ForSureDBPlugin implements Plugin<Project> {
                     if (!hasSetDbMigrateCompileTaskDependency && v.buildType.debuggable) {
                         hasSetDbMigrateCompileTaskDependency = true
                         enforceTaskDependency(v.javaCompile, dbMigrateTask)
-                        enforceTaskDependency(dbMigrateTask, v.getMergeAssets())
+
+                        if (fabricPluginAdded(project)) {
+                            // see method
+                            warnFabricWorkaround(v)
+                        } else {
+                            // Android seems to be okay with merging assets either before
+                            // or after compilation. This moves the asset merging until
+                            // after compilation and the assets output have been copied
+                            // to their correct locations.
+                            enforceTaskDependency(dbMigrateTask, v.getMergeAssets())
+                        }
                         def kotlinCompileTask = project.tasks.findByName('compile' + GUtil.toCamelCase(v.name) + 'Kotlin')
                         if (kotlinCompileTask != null) {
                             enforceTaskDependency(kotlinCompileTask, dbMigrateTask)
@@ -167,6 +177,22 @@ class ForSureDBPlugin implements Plugin<Project> {
             return
         }
         addKaptArguments(kaptExt, forsuredbExt, migrate, includeGeneratedAnnotation)
+    }
+
+    private static def fabricPluginAdded(Project p) {
+        return p.plugins.findPlugin('io.fabric') != null
+    }
+
+    private static def warnFabricWorkaround(v) {
+        def message = "\n**********\n\n"
+        message += "Detected dbMigrate task and fabric plugin task would create circular task "
+        message += "dependency attempting to merge migration assets into an assembled binary. "
+        message += "The dbMigrate task depends upon ${v.getMergeAssets().name} running AFTER "
+        message += "compilation, but the fabric plugin depends upon it running BEFORE compilation. "
+        message += "There is no way to resolve this except to run a build with dbMigrate first, "
+        message += "then follow with ${v.getMergeAssets().name} in a subsequent build. I'm sorry "
+        message += "for the inconvenience.\n\n**********"
+        TaskLog.w(message)
     }
 
     private static def addProcessorArg(JavaCompile t, String key, String value) {
